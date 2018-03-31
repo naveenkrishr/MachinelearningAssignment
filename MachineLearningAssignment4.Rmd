@@ -1,0 +1,122 @@
+---
+title: "Machine Learning - Assignment"
+author: "Naveen Krishnan R"
+date: "March 31, 2018"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+Machine Learning Assignment - 4
+==================================
+
+This document describes the analysis and outcome of the analysis done on the Assignment for Machine learning. 
+
+The first part is the various libraries that are used for this analysis
+
+```{r Libraried}
+library(caret)
+library(randomForest)
+library(Hmisc)
+```
+
+## Reading file
+
+The next part is for reading the csv files provided and creating a training and test data for analysis
+
+```{r read_files }
+training_data <- read.csv("pml-training.csv",na.strings = c("NA", "#DIV/0!", ""))
+testing_data  <- read.csv("pml-testing.csv" ,na.strings = c("NA", "#DIV/0!", ""))
+inTrain  <- createDataPartition(training_data$classe, p=0.75, list=FALSE)
+TrainingSet <- training_data[inTrain,]
+TestingSet <- training_data[-inTrain,]
+dim(TrainingSet)
+dim(TestingSet)
+```
+
+## Data Preparation
+
+The next part is to read only the relevent data for analysis. This involves removing the N/A and other irrelevent data
+
+```{r Data Prepeareation }
+isnacols <- colSums(is.na(TrainingSet)) == 0
+TrainingSet <- TrainingSet[,isnacols]
+TestingSet <- TestingSet[,isnacols]
+
+dim(TrainingSet)
+dim(TestingSet)
+set.seed(5602)
+# Remove the first 5 cols as it dont have any relationship with data
+TrainingSet <- TrainingSet[,-c(1:5)]
+TestingSet <- TestingSet[,-c(1:5)]
+
+```
+
+## Prediction Model 1 Rpart Decission Tree
+
+Validate the prediction with Decission Tree algoritm. This uses the train function in the caret package to perform this analysis
+
+```{r Rpart }
+# controlRpart <- trainControl(method="cv", number=3, verboseIter=FALSE)
+modelRpart <- train(classe ~ ., data=TrainingSet, method="rpart")
+modelRpart$finalModel
+# Test this in the test data set
+
+confusionMatrix(TestingSet$classe,predict(modelRpart,TestingSet[,-55]))
+```
+
+
+
+## Prediction Model 2 Random Forest
+
+Validate the prediction with Random forest algoritm. This uses the train function in the caret package to perform this analysis
+
+```{r RF }
+
+
+controlRF <- trainControl(method="cv", number=3, verboseIter=FALSE)
+modelRF <- train(classe ~ ., data=TrainingSet, method="rf",
+                          trControl=controlRF)
+modelRF$finalModel
+# Test this in the test data set
+
+confusionMatrix(TestingSet$classe,predict(modelRF,TestingSet[,-55]))
+```
+
+
+
+
+## Prediction Model 3 LDA 
+
+Validate the prediction with LDA. This uses the train function in the caret package to perform this analysis
+
+```{r LDA }
+
+
+
+modelLDA <- train(classe ~ ., data=TrainingSet, method="lda")
+modelLDA$finalModel
+# Test this in the test data set
+
+confusionMatrix(TestingSet$classe,predict(modelLDA,TestingSet[,-55]))
+```
+
+## Final Model 
+
+The final Model will be Random forest as it is giving near perfect results. Using the same for the input test data for results
+
+```{r Final test test }
+
+
+testing_data <- testing_data[,isnacols]
+
+testing_data <- testing_data[,-c(1:5)]
+Predict_data <- predict(modelRF,testing_data[,-55])
+```
+
